@@ -71,15 +71,19 @@ methods
         nlabels = length(self.LabelNames);
         fprintf('Training with %i labels on %i images (k = %i):\n', ...
             nlabels, length(self.KnownSet), k);
-        [T, V, labelT, labelV] = self.partitionKnownSet(k);
+        % PCA considers only one image for each label.
+        T = self.partitionKnownSet(1);
         self.Training.mean = mean(T, 2);
-        % self.Training.mean = mean([T V], 2);
         T = T - repmat(self.Training.mean, 1, size(T, 2)); % Normalize
         L = T' * T;
         eigs_k = min(30, size(T, 2) - 1);
         fprintf('Computing %i eigenfaces dimensions.\n', eigs_k);
         [E, ~] = eigs(L, eigs_k);
         self.Training.eigenfaces = T * E;  % Compute eigenfaces
+        % Now partition again, using k images to derive the coordinates
+        % (including the image used for PCA).
+        [T, V, labelT, labelV] = self.partitionKnownSet(k);
+        T = T - repmat(self.Training.mean, 1, size(T, 2)); % Normalize
         WT = self.Training.eigenfaces' * T; % Compute coordinates in eigenfaces space
         % Here's where the implementation options begin to drastically
         % expand. At this point we have up to k distinct coordinates
@@ -101,7 +105,7 @@ methods
         [labelA, scoreA] = self.assignLabelAndScore(WV);
         % In the interest of starting simple, initially we'll base
         % epsilon solely on the measured variance in the training set.
-        epsilon = quantile(self.Training.rawepsilon, .75)
+        epsilon = quantile(self.Training.rawepsilon, .90)
         elideA = scoreA > epsilon;
         self.Training.epsilon = epsilon;
         self.Training.isvalid = true;
@@ -161,8 +165,7 @@ methods (Access = private)
         labelV = [];
         for i = 1:nlabels
             selected = [self.KnownSet.label] == i;
-            fprintf('    %-20s  %2i image(s)\n', ...
-                self.LabelNames{i}, sum(selected));
+            % fprintf('    %-20s  %2i image(s)\n', self.LabelNames{i}, sum(selected));
             indexes = find(selected);
             assert(~isempty(indexes), 'KnownSet contains no images for label %i', i);
             for j = 1:min(k, length(indexes))
