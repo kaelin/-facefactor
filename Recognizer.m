@@ -85,19 +85,9 @@ methods
         [T, V, labelT, labelV] = self.partitionKnownSet(k);
         T = T - repmat(self.Training.mean, 1, size(T, 2)); % Normalize
         WT = self.Training.eigenfaces' * T; % Compute coordinates in eigenfaces space
-        % Here's where the implementation options begin to drastically
-        % expand. At this point we have up to k distinct coordinates
-        % for each label in the training set. The original eigenface
-        % paper recommends computing an "average" coordinate for each
-        % label. We could instead choose to keep each distinct
-        % coordinate for each label, which may avoid some hypothetical
-        % ambiguity introduced by averaging-- at the cost of definitely
-        % increasing the number of scores we ultimately have to
-        % compute. We could also opt for a hybrid approach, averaging
-        % coordinates that are already "close" into clusters that still
-        % account for significant variations between images assigned
-        % the same label.
-        self.finishTrainingBasicAverageCoordinate(labelT, WT);
+        % For a first approximation, save all of the training image
+        % coordinates.
+        self.sortCoordinatesAndComputeRawEpsilon(labelT, WT);
         % Now we run through the validation set and see if we can learn
         % a suitable final value for epsilon.
         V = V - repmat(self.Training.mean, 1, size(V, 2)); % Normalize
@@ -105,7 +95,7 @@ methods
         [labelA, scoreA] = self.assignLabelAndScore(WV);
         % In the interest of starting simple, initially we'll base
         % epsilon solely on the measured variance in the training set.
-        epsilon = quantile(self.Training.rawepsilon, .90)
+        epsilon = quantile(self.Training.rawepsilon, .50)
         elideA = scoreA > epsilon;
         self.Training.epsilon = epsilon;
         self.Training.isvalid = true;
@@ -139,24 +129,6 @@ methods (Access = private)
         end
     end
 
-    function finishTrainingBasicAverageCoordinate( self, labelT, WT )
-        % Compute the "average" coordinate for each label.
-        nlabels = length(self.LabelNames);
-        eigs_k = size(WT, 1);
-        self.Training.indexlabel = 1:nlabels; % No indirection necessary
-        self.Training.labelcoord = zeros(eigs_k, nlabels);
-        self.Training.rawepsilon = NaN(1, nlabels);
-        for i = 1:nlabels
-            X = WT(:, labelT == i);
-            meanX = mean(X, 2);
-            highscore = max(arrayfun(@(j) norm(X(:, j) - meanX), 1:size(X, 2)));
-            self.Training.labelcoord(:, i) = meanX;
-            if highscore > 0
-               self.Training.rawepsilon(:, i) = highscore * 1.001;
-            end
-        end
-    end
-
     function [ T, V, labelT, labelV ] = partitionKnownSet( self, k )
         nlabels = length(self.LabelNames);
         T = [];
@@ -175,6 +147,28 @@ methods (Access = private)
             for j = j + 1:length(indexes)
                 V = [V self.KnownSet(indexes(j)).image(:)];
                 labelV = [labelV i];
+            end
+        end
+    end
+    
+    function sortCoordinatesAndComputeRawEpsilon( self, labelT, WT )
+        % Compute the raw epsilon score for each label.
+        nlabels = length(self.LabelNames);
+        eigs_k = size(WT, 1);
+        self.Training.indexlabel = zeros(1, size(WT, 2));
+        self.Training.labelcoord = zeros(eigs_k, size(WT, 2));
+        self.Training.rawepsilon = NaN(1, nlabels);
+        loc = 1;
+        for i = 1:nlabels
+            X = WT(:, labelT == i);
+            selected = loc:(loc + size(X, 2) - 1);
+            loc = loc + length(selected);
+            self.Training.indexlabel(selected) = i;
+            self.Training.labelcoord(:, selected) = X;
+            meanX = mean(X, 2);
+            highscore = max(arrayfun(@(j) norm(X(:, j) - meanX), 1:size(X, 2)));
+            if highscore > 0
+               self.Training.rawepsilon(:, i) = highscore;
             end
         end
     end
