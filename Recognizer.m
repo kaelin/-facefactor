@@ -58,7 +58,7 @@ methods
         matf.training = self.Training;
     end
 
-    function [ label, score ] = step( self, image )
+    function [ label, score, W ] = step( self, image )
         X = image(:) - self.Training.mean; % Normalize
         W = self.Training.eigenfaces' * X; % Compute coordinates in eigenfaces space
         [label, score] = self.assignLabelAndScore(W);
@@ -87,7 +87,9 @@ methods
         WT = self.Training.eigenfaces' * T; % Compute coordinates in eigenfaces space
         % For a first approximation, save all of the training image
         % coordinates.
-        self.sortCoordinatesAndComputeRawEpsilon(labelT, WT);
+        self.Training.indexlabel = labelT;
+        self.Training.labelcoord = WT;
+        self.computeRawEpsilon(labelT, WT);
         % Now we run through the validation set and see if we can learn
         % a suitable final value for epsilon.
         V = V - repmat(self.Training.mean, 1, size(V, 2)); % Normalize
@@ -128,6 +130,20 @@ methods (Access = private)
             end
         end
     end
+    
+    function computeRawEpsilon( self, labelT, WT )
+        % Compute the raw epsilon score for each label.
+        nlabels = length(self.LabelNames);
+        self.Training.rawepsilon = NaN(1, nlabels);
+        for i = 1:nlabels
+            X = WT(:, labelT == i);
+            meanX = mean(X, 2);
+            highscore = max(arrayfun(@(j) norm(X(:, j) - meanX), 1:size(X, 2)));
+            if highscore > 0
+               self.Training.rawepsilon(:, i) = highscore;
+            end
+        end
+    end
 
     function [ T, V, labelT, labelV ] = partitionKnownSet( self, k )
         nlabels = length(self.LabelNames);
@@ -150,28 +166,6 @@ methods (Access = private)
             end
         end
     end
-    
-    function sortCoordinatesAndComputeRawEpsilon( self, labelT, WT )
-        % Compute the raw epsilon score for each label.
-        nlabels = length(self.LabelNames);
-        eigs_k = size(WT, 1);
-        self.Training.indexlabel = zeros(1, size(WT, 2));
-        self.Training.labelcoord = zeros(eigs_k, size(WT, 2));
-        self.Training.rawepsilon = NaN(1, nlabels);
-        loc = 1;
-        for i = 1:nlabels
-            X = WT(:, labelT == i);
-            selected = loc:(loc + size(X, 2) - 1);
-            loc = loc + length(selected);
-            self.Training.indexlabel(selected) = i;
-            self.Training.labelcoord(:, selected) = X;
-            meanX = mean(X, 2);
-            highscore = max(arrayfun(@(j) norm(X(:, j) - meanX), 1:size(X, 2)));
-            if highscore > 0
-               self.Training.rawepsilon(:, i) = highscore;
-            end
-        end
-    end
 end
-    
+
 end
