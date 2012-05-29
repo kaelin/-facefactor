@@ -79,7 +79,7 @@ methods
         eigs_k = min(30, size(T, 2) - 1);
         fprintf('Computing %i eigenfaces dimensions.\n', eigs_k);
         [E, ~] = eigs(L, eigs_k);
-        self.Training.eigenfaces = T * E;  % Compute eigenfaces
+        self.Training.eigenfaces = normc(T * E);  % Compute eigenfaces
         % Now partition again, using k images to derive the coordinates
         % (including the image used for PCA).
         [T, V, labelT, labelV] = self.partitionKnownSet(k);
