@@ -26,22 +26,40 @@ eyesImage = eyesImage + 0.999; % eyesBlank;
 eyesImage = imadjust(eyesImage);
 
 %% Detect MSER features
-regions = detectMSERFeatures(eyesImage, 'RegionAreaRange', [20 350], 'MaxAreaVariation', 0.25);
+regionsB4 = detectMSERFeatures(eyesImage, 'RegionAreaRange', [20 350], 'MaxAreaVariation', 0.25);
+
+%% Postprocess and cluster MSER features
+regions = regionsB4;
 levels = arrayfun(@(x, y) eyesImage(floor(y), floor(x)), regions.Centroid(:, 1), regions.Centroid(:, 2));
 regions = regions(levels < 0.7);
 sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
-regionsLt = regions(sides == -1);
-regionsRt = regions(sides == 1);
+selected = find(sides == -1);
+if ~isempty(selected)
+    regionsLt = regions(selected);
+else
+    regionsLt = MSERRegions;
+end
+selected = find(sides == 1);
+if ~isempty(selected)
+    regionsRt = regions(selected);
+else
+    regionsRt = MSERRegions;
+end
 [CLt, MLt] = facefactor.clusterMSERRegions(regionsLt, 20, 3);
 [CRt, MRt] = facefactor.clusterMSERRegions(regionsRt, 20, 3);
 
+%% Visualize results
 % toc;
 subplot(2, 3, [1 2 4 5]); subimage(inputImage); axis off;
-subplot(2, 3, 3); subimage(eyesImage + 0.9); hold all;
+subplot(2, 3, 3); subimage(imcrop(faceImage, [20 58 119 39]) + 0.7); hold all;
 % plot(regionsLt); hold all;
 % plot(regionsRt); hold all;
-scatter(CLt(:, 1), CLt(:, 2), (MLt * 3).^1.7, 'Filled'); hold all;
-scatter(CRt(:, 1), CRt(:, 2), (MRt * 3).^1.7, 'Filled'); hold all;
+if ~isempty(CLt)
+    scatter(CLt(:, 1), CLt(:, 2), (MLt * 3).^1.7, 'Filled'); hold all;
+end
+if ~isempty(CRt)
+    scatter(CRt(:, 1), CRt(:, 2), (MRt * 3).^1.7, 'Filled'); hold all;
+end
 hold off;
 subplot(2, 3, 6); subimage(faceImage); axis off;
 if rec.Training.isvalid
