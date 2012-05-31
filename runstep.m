@@ -30,21 +30,11 @@ regionsB4 = detectMSERFeatures(eyesImage, 'RegionAreaRange', [20 350], 'MaxAreaV
 
 %% Postprocess and cluster MSER features
 regions = regionsB4;
-levels = arrayfun(@(x, y) eyesImage(floor(y), floor(x)), regions.Centroid(:, 1), regions.Centroid(:, 2));
-regions = regions(levels < 0.7);
+levels = facefactor.sampleMSERRegions(eyesImage, regions);
+regions = facefactor.selectMSERRegions(regions, levels < 0.7);
 sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
-selected = find(sides == -1);
-if ~isempty(selected)
-    regionsLt = regions(selected);
-else
-    regionsLt = MSERRegions;
-end
-selected = find(sides == 1);
-if ~isempty(selected)
-    regionsRt = regions(selected);
-else
-    regionsRt = MSERRegions;
-end
+regionsLt = facefactor.selectMSERRegions(regions, sides == -1);
+regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
 [CLt, MLt] = facefactor.clusterMSERRegions(regionsLt, 20, 3);
 [CRt, MRt] = facefactor.clusterMSERRegions(regionsRt, 20, 3);
 
