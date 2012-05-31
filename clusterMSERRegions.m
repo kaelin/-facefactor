@@ -28,6 +28,14 @@ if regions.Count == 0
     return;
 end
 
+if regions.Count == 1
+    C = regions.Centroid;
+    M = 1;
+    IDX = 1;
+    D = 0;
+    return;
+end
+
 for k = 1:max_k
     [IDX, C, sumd, D] = kmeans(regions.Centroid, k);
     if max(sumd) <= distance
