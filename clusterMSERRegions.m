@@ -36,13 +36,19 @@ if regions.Count == 1
     return;
 end
 
-for k = 1:max_k
-    [IDX, C, sumd, D] = kmeans(regions.Centroid, k);
-    if max(sumd) <= distance
-        break;
+try
+    for k = 1:max_k
+        [IDX, C, sumd, D] = kmeans(regions.Centroid, k);
+        if max(sumd) <= distance
+            break;
+        end
     end
+    M = arrayfun(@(i) sum(IDX == i), 1:k);
+catch ME
+    % Error using kmeans/batchUpdate (line 376)
+    % Empty cluster created at iteration 2.
+    disp(ME.message);
+    [IDX, C, ~, D] = kmeans(regions.Centroid, k - 1);
 end
-M = arrayfun(@(i) sum(IDX == i), 1:k);
 
 end
-

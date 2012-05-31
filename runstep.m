@@ -11,7 +11,7 @@ if ~isempty(bbox)
     faceImage = imcrop(inputImage, faceBox);
     faceImage = imresize(faceImage, [200 NaN]);
     faceImage = imcrop(faceImage, [20 0 159 200]);
-    eyesImage = imcrop(faceImage, [20 58 119 39]);
+    eyesImage = imcrop(faceImage, eyesCrop);
     faceImage = imadjust(faceImage, stretchlim(eyesImage, [0.001 0.999]));
     faceImage = immultiply(im2double(faceImage), faceMask);
 else
@@ -35,13 +35,13 @@ regions = facefactor.selectMSERRegions(regions, levels < 0.7);
 sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
 regionsLt = facefactor.selectMSERRegions(regions, sides == -1);
 regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
-[CLt, MLt] = facefactor.clusterMSERRegions(regionsLt, 20, 3);
-[CRt, MRt] = facefactor.clusterMSERRegions(regionsRt, 20, 3);
+[CLt, MLt] = facefactor.clusterMSERRegions(regionsLt, 25, 3);
+[CRt, MRt] = facefactor.clusterMSERRegions(regionsRt, 25, 3);
 
 %% Visualize results
 % toc;
 subplot(2, 3, [1 2 4 5]); subimage(inputImage); axis off;
-subplot(2, 3, 3); subimage(imcrop(faceImage, [20 58 119 39]) + 0.7); hold all;
+subplot(2, 3, 3); subimage(imcrop(faceImage, eyesCrop) + 0.7); hold all;
 % plot(regionsLt); hold all;
 % plot(regionsRt); hold all;
 if ~isempty(CLt)
