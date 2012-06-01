@@ -20,11 +20,12 @@ function [ C, M, IDX, D ] = clusterMSERRegions( regions, distance, max_k )
 %   You should have received a copy of the GNU General Public License
 %   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+C = [];
+M = [];
+IDX = [];
+D = [];
+
 if regions.Count == 0
-    C = [];
-    M = [];
-    IDX = [];
-    D = [];
     return;
 end
 

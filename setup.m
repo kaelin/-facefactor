@@ -18,9 +18,8 @@ faceDetector.MergeThreshold = 7;
 
 faceMask = facefactor.gaussianMask(200, 160);
 eyesCrop = [20 58 119 39];
-eyesMask = [facefactor.gaussianMask(eyesCrop(4) + 1, 50) ...
-    zeros(eyesCrop(4) + 1, 20) ...
-    facefactor.gaussianMask(eyesCrop(4) + 1, 50)];
+eyesMask = facefactor.gaussianMask(eyesCrop(4) + 1, 70);
+eyesMask = [eyesMask(:, 11:60) zeros(eyesCrop(4) + 1, 20) eyesMask(:, 11:60)];
 
 %% Recognition
 rec = facefactor.Recognizer('rec-ex3.mat');
