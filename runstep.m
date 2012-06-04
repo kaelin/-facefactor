@@ -21,8 +21,9 @@ end
 eyesImage = im2double(eyesImage);
 
 %% Infer image rotation
+figure(2); clf;
 inferImage = inputImage;
-inferAngle = facefactor.inferImageRotation(eyesImage, eyesMask, subplot(2, 3, 3));
+[inferAngle, inferConfidence] = facefactor.inferImageRotation(eyesImage, eyesMask, engine, gca);
 if inferAngle ~= 0
     inferImage = imrotate(inferImage, double(inferAngle));
     bbox = faceDetector.step(inferImage);
@@ -38,9 +39,11 @@ if inferAngle ~= 0
         faceImage = immultiply(im2double(faceImage), faceMask);
     end
 end
+disp([inferAngle inferConfidence]);
 
 %% Visualize results
 % toc;
+figure(1);
 subplot(2, 3, [1 2 4 5]); subimage(inputImage); axis off;
 subplot(2, 3, 6); subimage(faceImage); axis off;
 if rec.Training.isvalid

@@ -1,4 +1,4 @@
-function [ angle, confidence ] = inferImageRotation( eyesImage, eyesMask, hax )
+function [ angle, confidence ] = inferImageRotation( eyesImage, eyesMask, engine, hax )
 %INFERINPUTIMAGEROTATION Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -36,18 +36,44 @@ regions = facefactor.selectMSERRegions(regions, levels < 0.7);
 sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
 regionsLt = facefactor.selectMSERRegions(regions, sides == -1);
 regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
-[CLt, MLt] = facefactor.clusterMSERRegions(regionsLt, 25, 3);
-[CRt, MRt] = facefactor.clusterMSERRegions(regionsRt, 25, 3);
+[CLt, MLt, ILt] = facefactor.clusterMSERRegions(regionsLt, 25, 3);
+[CRt, MRt, IRt] = facefactor.clusterMSERRegions(regionsRt, 25, 3);
 
-if length(MLt) == 1 && length(MRt) == 1
-    angle = round(atan2(CRt(1, 2) - CLt(1, 2), CRt(1, 1) - CLt(1, 1)) * (180 / pi));
-    confidence = .95;
+MLt
+MRt
+
+OLt = arrayfun(@(i) ellipsity(regionsLt(ILt == i).Axes), 1:length(MLt))
+ORt = arrayfun(@(i) ellipsity(regionsRt(IRt == i).Axes), 1:length(MRt))
+
+SLt = arrayfun(@(i) {std(regionsLt(ILt == i).Centroid, 0, 1)}, 1:length(MLt));
+cell2mat(SLt')
+SRt = arrayfun(@(i) {std(regionsRt(IRt == i).Centroid, 0, 1)}, 1:length(MRt));
+cell2mat(SRt')
+
+% Do inference on the evidence we observe for each candidate cluster
+ELt = arrayfun(@inference, MLt, OLt, SLt)
+ERt = arrayfun(@inference, MRt, ORt, SRt)
+
+confLt = max(ELt);
+pickLt = find(ELt == confLt);
+if length(pickLt) ~= 1
+    pickLt = find(OLt == min(OLt));
+end
+confRt = max(ERt);
+pickRt = find(ERt == confRt);
+if length(pickRt) ~= 1
+    pickRt = find(ORt == min(ORt));
+end
+
+if length(pickLt) == 1 && length(pickRt) == 1
+    angle = round(atan2(CRt(pickRt, 2) - CLt(pickLt, 2), CRt(pickRt, 1) - CLt(pickLt, 1)) * (180 / pi));
+    confidence = min(ELt(pickLt), ERt(pickRt));
 end
 
 if nargin > 2
     axes(hax);
     subimage(1 - eyesImage * 0.9); hold all;
-    contour(eyesMask); hold all;
+    % contour(eyesMask); hold all;
     plot(regionsLt); hold all;
     plot(regionsRt); hold all;
     if ~isempty(CLt)
@@ -58,5 +84,21 @@ if nargin > 2
     end
     hold off;
 end
+
+    function [ o ] = ellipsity( axes )
+        o = min(axes(:, 1) ./ axes(:, 2));
+    end
+
+    function [ e ] = inference( M, O, S )
+        S = cell2mat(S);
+        evidence = cell(1, 5);
+        evidence{2} = sum(M > [0 2 6]);
+        evidence{3} = sum(O < [Inf 3 1.57]);
+        evidence{4} = sum(S(1) > [-Inf 1 2]);
+        evidence{5} = sum(S(2) > [-Inf 0.4 0.8]);
+        eng = enter_evidence(engine, evidence);
+        marginals = marginal_nodes(eng, 1);
+        e = marginals.T(1);
+    end
 
 end
