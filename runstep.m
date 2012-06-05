@@ -41,7 +41,7 @@ if inferAngle ~= 0
 end
 disp([inferAngle inferConfidence]);
 
-%% Visualize results
+% Visualize results
 % toc;
 figure(1);
 subplot(2, 3, [1 2 4 5]); subimage(inputImage); axis off;

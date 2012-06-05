@@ -78,9 +78,11 @@ if nargin > 2
     plot(regionsRt); hold all;
     if ~isempty(CLt)
         scatter(CLt(:, 1), CLt(:, 2), (MLt * 3).^1.7, 'Filled'); hold all;
+        scatter(CLt(pickLt, 1), CLt(pickLt, 2), 'd'); hold all;
     end
     if ~isempty(CRt)
         scatter(CRt(:, 1), CRt(:, 2), (MRt * 3).^1.7, 'Filled'); hold all;
+        scatter(CRt(pickRt, 1), CRt(pickRt, 2), 'd'); hold all;
     end
     hold off;
 end
@@ -93,7 +95,7 @@ end
         S = cell2mat(S);
         evidence = cell(1, 5);
         evidence{2} = sum(M > [0 2 6]);
-        evidence{3} = sum(O < [Inf 3 1.57]);
+        evidence{3} = sum(O > [0 1.57 2 3]);
         evidence{4} = sum(S(1) > [-Inf 1 2]);
         evidence{5} = sum(S(2) > [-Inf 0.4 0.8]);
         eng = enter_evidence(engine, evidence);
