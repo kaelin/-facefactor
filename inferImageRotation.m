@@ -1,4 +1,4 @@
-function [ angle, confidence ] = inferImageRotation( eyesImage, eyesMask, engine, hax )
+function [ angle, confidence, sample ] = inferImageRotation( eyesImage, eyesMask, engine, hax )
 %INFERINPUTIMAGEROTATION Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -39,20 +39,25 @@ regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
 [CLt, MLt, ILt] = facefactor.clusterMSERRegions(regionsLt, 25, 3);
 [CRt, MRt, IRt] = facefactor.clusterMSERRegions(regionsRt, 25, 3);
 
-MLt
-MRt
+sample = cell(5, length(MLt) + length(MRt));
+sample(2, :) = arrayfun(@(m) {m}, [MLt MRt]);
 
 OLt = arrayfun(@(i) ellipsity(regionsLt(ILt == i).Axes), 1:length(MLt))
 ORt = arrayfun(@(i) ellipsity(regionsRt(IRt == i).Axes), 1:length(MRt))
 
+sample(3, :) = arrayfun(@(o) {o}, [OLt ORt]);
+
 SLt = arrayfun(@(i) {std(regionsLt(ILt == i).Centroid, 0, 1)}, 1:length(MLt));
-cell2mat(SLt')
 SRt = arrayfun(@(i) {std(regionsRt(IRt == i).Centroid, 0, 1)}, 1:length(MRt));
-cell2mat(SRt')
+
+sample(4, :) = arrayfun(@(s) {s{1}'}, [SLt SRt]);
+
+C = [CLt; CRt];
+sample(5, :) = arrayfun(@(i) {norm(C(i, :) - [60 20])}, 1:size(C, 1));
 
 % Do inference on the evidence we observe for each candidate cluster
-ELt = arrayfun(@inference, MLt, OLt, SLt)
-ERt = arrayfun(@inference, MRt, ORt, SRt)
+ELt = arrayfun(@inference, MLt, OLt, SLt);
+ERt = arrayfun(@inference, MRt, ORt, SRt);
 
 confLt = max(ELt);
 pickLt = find(ELt == confLt);
@@ -68,6 +73,8 @@ end
 if length(pickLt) == 1 && length(pickRt) == 1
     angle = round(atan2(CRt(pickRt, 2) - CLt(pickLt, 2), CRt(pickRt, 1) - CLt(pickLt, 1)) * (180 / pi));
     confidence = min(ELt(pickLt), ERt(pickRt));
+    sample(1, :) = {2};
+    sample(1, [pickLt pickRt+length(ELt)]) = {1};
 end
 
 if nargin > 2
