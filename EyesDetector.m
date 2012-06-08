@@ -50,7 +50,8 @@ methods
         self.adjustImage();
         
         % Detect MSER features
-        regionsB4 = detectMSERFeatures(self.Image, 'RegionAreaRange', [20 350], 'MaxAreaVariation', 0.25);
+        regionsB4 = detectMSERFeatures(self.Image, ...
+            'RegionAreaRange', [20 350], 'MaxAreaVariation', 0.25);
 
         % Postprocess and cluster MSER features
         regions = regionsB4;
@@ -65,6 +66,13 @@ methods
         self.Side = ones(1, length(MLt) + length(MRt)) * 2;
         self.Side(1:length(MLt)) = 1;
         
+        % Bail out unless we have candidates for both sides
+        if isempty(MLt) || isempty(MRt)
+            positions = [];
+            confidence = 0;
+            return;
+        end
+        
         % Sample clustered features
         self.Sample = cell(5, length(MLt) + length(MRt));
         self.Sample(2, :) = arrayfun(@(m) {m}, [MLt MRt]);
@@ -74,7 +82,8 @@ methods
         SLt = arrayfun(@(i) {std(regionsLt(ILt == i).Centroid, 0, 1)}, 1:length(MLt));
         SRt = arrayfun(@(i) {std(regionsRt(IRt == i).Centroid, 0, 1)}, 1:length(MRt));
         self.Sample(4, :) = arrayfun(@(s) {s{1}'}, [SLt SRt]);
-        self.Sample(5, :) = arrayfun(@(i) {norm(self.Position(i, :) - [60 20])}, 1:size(self.Position, 1));
+        self.Sample(5, :) = ...
+            arrayfun(@(i) {norm(self.Position(i, :) - [60 20])}, 1:size(self.Position, 1));
         
         % Run inference and pick positions
         self.computeScores();
@@ -114,6 +123,9 @@ methods (Access = private)
         pickRt = find(ERt == confRt, 1);
         positions = [self.Position(pickLt, :); self.Position(pickRt+length(ELt), :)];
         confidence = min(confLt, confRt);
+        
+        % Fix positions for inputImage
+        positions = positions + repmat(self.Crop(1:2), 2, 1);
         
         % Record picks
         self.Sample(1, :) = {2};
