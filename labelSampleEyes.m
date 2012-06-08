@@ -1,6 +1,9 @@
 function labelSampleEyes(  )
-%LABELSAMPLEEYES Summary of this function goes here
-%   Detailed explanation goes here
+%LABELSAMPLEEYES Utility for hand-labeling eye detector training samples.
+%   This function is intended for use from the MATLAB command prompt, and
+%   it depends on several variables being set in the base workspace. It
+%   modifies the `samples` variable in the base workspace, so use it with
+%   due caution.
 
 %   Copyright (C) 2012 Kaelin Colclasure
 
@@ -54,9 +57,7 @@ function labelSampleEyes(  )
 cam = evalin('base', 'cam');
 faceDetector = evalin('base', 'faceDetector');
 faceMask = evalin('base', 'faceMask');
-eyesCrop = evalin('base', 'eyesCrop');
-eyesMask = evalin('base', 'eyesMask');
-engine = evalin('base', 'engine');
+eyesDetector = evalin('base', 'eyesDetector');
 
 try
     samples = evalin('base', 'samples');
@@ -85,22 +86,17 @@ if ~isempty(bbox)
     faceImage = imcrop(inputImage, faceBox);
     faceImage = imresize(faceImage, [200 NaN]);
     faceImage = imcrop(faceImage, [20 0 159 200]);
-    eyesImage = imcrop(faceImage, eyesCrop);
-    faceImage = imadjust(faceImage, stretchlim(eyesImage, [0.001 0.999]));
-    faceImage = immultiply(im2double(faceImage), faceMask);
 else
     faceImage = faceMask;
     return;
 end
 
-eyesImage = im2double(eyesImage);
-
 %% Infer image rotation
-figure(1); clf;
 inferImage = inputImage;
-[inferAngle, inferConfidence, sample] = facefactor.inferImageRotation(eyesImage, eyesMask, engine, gca)
-if inferAngle ~= 0
-    inferImage = imrotate(inferImage, double(inferAngle));
+[~, confidence, angle] = eyesDetector.step(faceImage);
+figure(1); clf; eyesDetector.plot();
+if angle ~= 0
+    inferImage = imrotate(inferImage, double(angle));
     bbox = faceDetector.step(inferImage);
     if ~isempty(bbox)
         faceBox = bbox(1, :);
@@ -109,11 +105,11 @@ if inferAngle ~= 0
         faceImage = imcrop(inferImage, faceBox);
         faceImage = imresize(faceImage, [200 NaN]);
         faceImage = imcrop(faceImage, [20 0 159 200]);
-        eyesImage = imcrop(faceImage, eyesCrop);
-        faceImage = imadjust(faceImage, stretchlim(eyesImage, [0.001 0.999]));
-        faceImage = immultiply(im2double(faceImage), faceMask);
     end
 end
+faceImage = imadjust(faceImage, stretchlim(faceImage, [0.001 0.999]));
+faceImage = immultiply(im2double(faceImage), faceMask);
+sample = eyesDetector.Sample
 
 %% Prompt for correct labels
 reply = input('Accept assigned labels in `sample` above? y/n [y]: ', 's');

@@ -76,7 +76,7 @@ methods
         hold off;
     end
     
-    function [ positions, confidence ] = step( self, faceImage )
+    function [ positions, confidence, angle ] = step( self, faceImage )
         self.Image = im2double(imcrop(faceImage, self.Crop));
         self.adjustImage();
         
@@ -102,6 +102,7 @@ methods
         if isempty(MLt) || isempty(MRt)
             positions = [];
             confidence = 0;
+            angle = 0;
             return;
         end
         
@@ -119,7 +120,7 @@ methods
         
         % Run inference and pick positions
         self.computeScores();
-        [positions, confidence] = self.pickPositions();
+        [positions, confidence, angle] = self.pickPositions();
         
             function [ o ] = ellipsity( axes )
                 o = min(axes(:, 1) ./ axes(:, 2));
@@ -146,7 +147,7 @@ methods (Access = private)
         end
     end
     
-    function [ positions, confidence ] = pickPositions( self )
+    function [ positions, confidence, angle ] = pickPositions( self )
         ELt = self.Score(self.Side == 1);
         ERt = self.Score(self.Side == 2);
         confLt = max(ELt);
@@ -155,6 +156,9 @@ methods (Access = private)
         pickRt = find(ERt == confRt, 1);
         positions = [self.Position(pickLt, :); self.Position(pickRt+length(ELt), :)];
         confidence = min(confLt, confRt);
+        angle = round(atan2( ...
+            positions(2, 2) - positions(1, 2), ...
+            positions(2, 1) - positions(1, 1)) * (180 / pi));
         
         % Fix positions for inputImage
         positions = positions + repmat(self.Crop(1:2), 2, 1);
