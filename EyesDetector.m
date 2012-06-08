@@ -29,10 +29,12 @@ end
 
 properties (SetAccess = private)
     Image;
+    MSERRegions;
     Position;
     Sample;
     Score;
     Side;
+    Pick;
 end
 
 methods
@@ -43,6 +45,35 @@ methods
         matf = matfile('+facefactor/eye-bnet-v1.mat');
         self.Bnet = matf.bnet;
         self.Engine = jtree_inf_engine(self.Bnet);
+    end
+    
+    function plot( self, hax )
+        if nargin > 1
+            axes(hax);
+        end
+        subimage(1 - self.Image * 0.9); hold all;
+        % contour(self.Mask);
+        plot(self.MSERRegions);
+        pts = double(self.Position);
+        for i = 1:length(self.Side)
+            x = pts(i, 1);
+            y = pts(i, 2);
+            if self.Pick(i)
+                color = 'm';
+            else
+                color = 'w';
+            end
+            if self.Side(i) == 1
+                text(x, y, ['\leftarrow  ' num2str(self.Score(i), '%.3f')], ...
+                    'HorizontalAlignment', 'left', 'Color', color, ...
+                    'BackgroundColor', 'k');
+            else
+                text(x, y, [num2str(self.Score(i), '%.3f') '\rightarrow'], ...
+                    'HorizontalAlignment', 'right', 'Color', color, ...
+                    'BackgroundColor', 'k');
+            end
+        end
+        hold off;
     end
     
     function [ positions, confidence ] = step( self, faceImage )
@@ -57,6 +88,7 @@ methods
         regions = regionsB4;
         levels = facefactor.sampleMSERRegions(self.Image, regions);
         regions = facefactor.selectMSERRegions(regions, levels < 0.7);
+        self.MSERRegions = regions; % Record for plot
         sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
         regionsLt = facefactor.selectMSERRegions(regions, sides == -1);
         regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
@@ -128,8 +160,10 @@ methods (Access = private)
         positions = positions + repmat(self.Crop(1:2), 2, 1);
         
         % Record picks
+        self.Pick = false(1, length(self.Score));
+        self.Pick([pickLt pickRt+length(ELt)]) = true;
         self.Sample(1, :) = {2};
-        self.Sample(1, [pickLt pickRt+length(ELt)]) = {1};
+        self.Sample(1, self.Pick) = {1};
     end
 end
 
