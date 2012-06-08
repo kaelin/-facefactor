@@ -40,7 +40,7 @@ methods
         self = self@handle;
         eyesMask = facefactor.gaussianMask(self.Crop(4) + 1, 70);
         self.Mask = [eyesMask(:, 11:60) zeros(self.Crop(4) + 1, 20) eyesMask(:, 11:60)];
-        matf = matfile('eye-bnet-v1.mat');
+        matf = matfile('+facefactor/eye-bnet-v1.mat');
         self.Bnet = matf.bnet;
         self.Engine = jtree_inf_engine(self.Bnet);
     end
