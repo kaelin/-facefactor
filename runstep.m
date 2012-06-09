@@ -11,21 +11,17 @@ if ~isempty(bbox)
     faceImage = imcrop(inputImage, faceBox);
     faceImage = imresize(faceImage, [200 NaN]);
     faceImage = imcrop(faceImage, [20 0 159 200]);
-    eyesImage = imcrop(faceImage, eyesCrop);
-    faceImage = imadjust(faceImage, stretchlim(eyesImage, [0.001 0.999]));
-    faceImage = immultiply(im2double(faceImage), faceMask);
 else
     faceImage = faceMask;
+    return;
 end
 
-eyesImage = im2double(eyesImage);
-
 %% Infer image rotation
-figure(2); clf;
 inferImage = inputImage;
-[inferAngle, inferConfidence] = facefactor.inferImageRotation(eyesImage, eyesMask, engine, gca);
-if inferAngle ~= 0
-    inferImage = imrotate(inferImage, double(inferAngle));
+[~, confidence, angle] = eyesDetector.step(faceImage);
+figure(2); clf; eyesDetector.plot();
+if angle ~= 0
+    inferImage = imrotate(inferImage, double(angle));
     bbox = faceDetector.step(inferImage);
     if ~isempty(bbox)
         faceBox = bbox(1, :);
@@ -34,12 +30,10 @@ if inferAngle ~= 0
         faceImage = imcrop(inferImage, faceBox);
         faceImage = imresize(faceImage, [200 NaN]);
         faceImage = imcrop(faceImage, [20 0 159 200]);
-        eyesImage = imcrop(faceImage, eyesCrop);
-        faceImage = imadjust(faceImage, stretchlim(eyesImage, [0.001 0.999]));
-        faceImage = immultiply(im2double(faceImage), faceMask);
     end
 end
-disp([inferAngle inferConfidence]);
+faceImage = immultiply(im2double(faceImage), faceMask);
+faceImage = imadjust(faceImage, stretchlim(faceImage, [0.001 0.999]));
 
 % Visualize results
 % toc;

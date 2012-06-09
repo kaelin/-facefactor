@@ -19,19 +19,7 @@ faceDetector.MergeThreshold = 7;
 faceMask = facefactor.gaussianMask(200, 160);
 
 %% Rotation inference
-eyesCrop = [20 58 119 39];
-eyesMask = facefactor.gaussianMask(eyesCrop(4) + 1, 70);
-eyesMask = [eyesMask(:, 11:60) zeros(eyesCrop(4) + 1, 20) eyesMask(:, 11:60)];
-
-DAG = false(5);
-DAG(1, 2:5) = true;
-bnet = mk_bnet(DAG, [2 3 4 3 3]);
-bnet.CPD{1} = tabular_CPD(bnet, 1, [.5  .5]);
-bnet.CPD{2} = tabular_CPD(bnet, 2, [.1  .345   .45 .355   .45 .3]);
-bnet.CPD{3} = tabular_CPD(bnet, 3, [.2  .02    .59 .2     .2  .39    .01 .39]);
-bnet.CPD{4} = tabular_CPD(bnet, 4, [.4  .33333 .5  .33333 .1  .33333]);
-bnet.CPD{5} = tabular_CPD(bnet, 5, [.5  .33333 .4  .33333 .1  .33333]);
-engine = jtree_inf_engine(bnet);
+eyesDetector = facefactor.EyesDetector;
 
 %% Recognition
 rec = facefactor.Recognizer('rec-ex3.mat');
