@@ -31,6 +31,7 @@ y = y .* (2 / halfm);
 [X, Y] = meshgrid(x, y);
 
 M = mvnpdf([X(:) Y(:)]);
+M = single(M);
 M = M / max(M);
 M = reshape(M, length(y), length(x));
 

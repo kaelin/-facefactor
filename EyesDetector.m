@@ -77,7 +77,7 @@ methods
     end
     
     function [ positions, confidence, angle ] = step( self, faceImage )
-        self.Image = im2double(imcrop(faceImage, self.Crop));
+        self.Image = im2single(imcrop(faceImage, self.Crop));
         self.adjustImage();
         
         % Detect MSER features

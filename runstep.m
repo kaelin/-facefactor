@@ -32,7 +32,7 @@ if angle ~= 0
         faceImage = imcrop(faceImage, [20 0 159 200]);
     end
 end
-faceImage = immultiply(im2double(faceImage), faceMask);
+faceImage = immultiply(im2single(faceImage), faceMask);
 faceImage = imadjust(faceImage, stretchlim(faceImage, [0.001 0.999]));
 
 % Visualize results
