@@ -92,8 +92,8 @@ methods
         sides = arrayfun(@(x) sign(x - 60), regions.Centroid(:, 1));
         regionsLt = facefactor.selectMSERRegions(regions, sides == -1);
         regionsRt = facefactor.selectMSERRegions(regions, sides == 1);
-        [CLt, MLt, ILt] = facefactor.clusterMSERRegions(regionsLt, 25, 3);
-        [CRt, MRt, IRt] = facefactor.clusterMSERRegions(regionsRt, 25, 3);
+        [CLt, MLt, ILt] = facefactor.clusterMSERRegions(regionsLt, 25, 5);
+        [CRt, MRt, IRt] = facefactor.clusterMSERRegions(regionsRt, 25, 5);
         self.Position = [CLt; CRt];
         self.Side = ones(1, length(MLt) + length(MRt)) * 2;
         self.Side(1:length(MLt)) = 1;
