@@ -16,3 +16,11 @@ facefactor
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This project is still early in its inception and consequently the code here
+is in rough shape. If you're looking for a usable, general library
+implementation of facial recognition algorithms, have a look at:
+
+<https://github.com/bytefish/facerec>
+
+-- Kaelin 06/27/2012
