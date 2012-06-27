@@ -1,5 +1,5 @@
-function labelSampleEyes(  )
-%LABELSAMPLEEYES Utility for hand-labeling eye detector training samples.
+function [ output_args ] = labelSampleFaces( input_args )
+%LABELSAMPLEFACES Summary of this function goes here
 %   This function is intended for use from the MATLAB command prompt, and
 %   it depends on several variables being set in the base workspace. It
 %   modifies the `samples` variable in the base workspace, so use it with
@@ -20,40 +20,6 @@ function labelSampleEyes(  )
 %   You should have received a copy of the GNU General Public License
 %   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Example of editing a mislabelled sample ('>>' is the MATLAB command prompt):
-% 
-% ---8<---
-% inferAngle =
-% 
-%    -11
-% 
-% inferConfidence =
-% 
-%     0.9558
-% 
-% sample = 
-% 
-%     [         1]    [         1]    [         2]
-%     [         8]    [         7]    [         9]
-%     [    1.3793]    [    1.2842]    [    2.1983]
-%     [2x1 single]    [2x1 single]    [2x1 single]
-%     [   36.9647]    [   29.8442]    [   38.9447]
-% 
-% Accept assigned labels in `sample` above? y/n [y]: n
-% Saved `sample` to Workspace for manual editing.
-% >> sample(1, :) = [{1} {2} {1}]
-% 
-% sample = 
-% 
-%     [         1]    [         2]    [         1]
-%     [         8]    [         7]    [         9]
-%     [    1.3793]    [    1.2842]    [    2.1983]
-%     [2x1 single]    [2x1 single]    [2x1 single]
-%     [   36.9647]    [   29.8442]    [   38.9447]
-% 
-% >> samples = [samples sample];
-% --->8---
-
 cam = evalin('base', 'cam');
 faceDetector = evalin('base', 'faceDetector');
 faceMask = evalin('base', 'faceMask');
@@ -61,7 +27,7 @@ eyesDetector = evalin('base', 'eyesDetector');
 
 try
     samples = evalin('base', 'samples');
-    assert(size(samples, 1) == 5, 'Wrong-sized samples!');
+    assert(size(samples, 1) == 2, 'Wrong-sized samples!');
 catch ME
     reply = input('Create new `samples` variable in Workspace? y/n [y]: ', 's');
     if isempty(reply)
@@ -70,7 +36,7 @@ catch ME
     if reply ~= 'y'
         return;
     end
-    samples = cell(5, 0);
+    samples = cell(2, 0);
 end
 
 %% Run step
@@ -94,7 +60,6 @@ end
 %% Infer image rotation
 inferImage = inputImage;
 [~, confidence, angle] = eyesDetector.step(faceImage);
-figure(1); clf; eyesDetector.plot();
 if angle ~= 0
     inferImage = imrotate(inferImage, double(angle));
     bbox = faceDetector.step(inferImage);
@@ -109,7 +74,8 @@ if angle ~= 0
 end
 faceImage = immultiply(im2single(faceImage), faceMask);
 faceImage = imadjust(faceImage, stretchlim(faceImage, [0.001 0.999]));
-sample = eyesDetector.Sample
+imshow(faceImage, 'InitialMagnification', 'fit');
+sample = {cam.Label; faceImage}
 
 %% Prompt for correct labels
 reply = input('Accept assigned labels in `sample` above? y/n [y]: ', 's');
