@@ -19,7 +19,7 @@ end
 %% Infer image rotation
 inferImage = inputImage;
 [~, confidence, angle] = eyesDetector.step(faceImage);
-figure(2); clf; eyesDetector.plot();
+% figure(2); clf; eyesDetector.plot();
 if angle ~= 0
     inferImage = imrotate(inferImage, double(angle));
     bbox = faceDetector.step(inferImage);

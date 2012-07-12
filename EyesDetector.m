@@ -1,5 +1,5 @@
 classdef EyesDetector < handle
-%EYESDETECTOR Estimate eye locations using a naive Bayes classifier.
+%EYESDETECTOR Estimate eye locations using a pre-trained classifier.
 %   Documentation forthcoming...
     
 %   Copyright (C) 2012 Kaelin Colclasure
@@ -21,6 +21,7 @@ properties (SetAccess = immutable)
     Crop = [20 58 119 39];
     Mask;
     Bnet;
+    LogitBoost;
 end
 
 properties (Access = private)
@@ -38,13 +39,21 @@ properties (SetAccess = private)
 end
 
 methods
-    function [ self ] = EyesDetector( )
+    function [ self ] = EyesDetector( classifier )
         self = self@handle;
         eyesMask = facefactor.gaussianMask(self.Crop(4) + 1, 70);
         self.Mask = [eyesMask(:, 11:60) zeros(self.Crop(4) + 1, 20) eyesMask(:, 11:60)];
-        matf = matfile('+facefactor/eye-bnet-v1.mat');
-        self.Bnet = matf.bnet;
-        self.Engine = jtree_inf_engine(self.Bnet);
+        if nargin < 1
+            classifier = 'LogitBoost';
+        end
+        if strcmpi(classifier, 'LogitBoost')
+            matf = matfile('+facefactor/eyes-classif-v1.mat');
+            self.LogitBoost = matf.lb;
+        else
+            matf = matfile('+facefactor/eye-bnet-v1.mat');
+            self.Bnet = matf.bnet;
+            self.Engine = jtree_inf_engine(self.Bnet);
+        end
     end
     
     function plot( self, hax )
@@ -138,12 +147,21 @@ methods (Access = private)
     end
     
     function computeScores( self )
-        evidence = cell(1, 5);
         self.Score = zeros(1, size(self.Sample, 2));
-        for i = 1:size(self.Sample, 2)
-            evidence(2:5) = self.Sample(2:5, i);
-            marginal = marginal_nodes(enter_evidence(self.Engine, evidence), 1);
-            self.Score(i) = marginal.T(1);
+        if ~isempty(self.LogitBoost)
+            X = single(zeros(5, length(self.Score)));
+            X(1, :) = cell2mat(self.Sample(2, :));
+            X(2, :) = cell2mat(self.Sample(3, :));
+            X(3:4, :) = cell2mat(self.Sample(4, :));
+            X(5, :) = cell2mat(self.Sample(5, :));
+            self.Score = single(self.LogitBoost.predict(X') == 1);
+        else
+            evidence = cell(1, 5);
+            for i = 1:size(self.Sample, 2)
+                evidence(2:5) = self.Sample(2:5, i);
+                marginal = marginal_nodes(enter_evidence(self.Engine, evidence), 1);
+                self.Score(i) = marginal.T(1);
+            end
         end
     end
     
