@@ -18,7 +18,7 @@ function [ inputImage ] = fetchInputImage( cam )
 %   You should have received a copy of the GNU General Public License
 %   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-cam.trigger();
-inputImage = cam.getdata();
+trigger(cam);
+inputImage = getdata(cam);
 
 end

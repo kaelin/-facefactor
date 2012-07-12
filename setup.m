@@ -12,14 +12,7 @@ else
 end
 
 %% Face detection
-faceDetector = vision.CascadeObjectDetector('FrontalFaceCART');
-faceDetector.MinSize = [170 170];
-faceDetector.MergeThreshold = 7;
-
-faceMask = facefactor.gaussianMask(200, 160);
-
-%% Rotation inference
-eyesDetector = facefactor.EyesDetector;
+pp = facefactor.Preprocessor();
 
 %% Recognition
 rec = facefactor.Recognizer('rec-ex3.mat');
