@@ -3,7 +3,7 @@ inputImage = facefactor.fetchInputImage(cam);
 
 %% Preprocess image
 % tic;
-faceImage = pp.step(inputImage);
+faceImage = ipp.step(inputImage);
 % toc;
 figure(1);
 subplot(2, 3, [1 2 4 5]); subimage(inputImage); axis off;

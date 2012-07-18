@@ -12,7 +12,7 @@ else
 end
 
 %% Face detection
-pp = facefactor.Preprocessor();
+ipp = facefactor.Preprocessor();
 
 %% Recognition
 rec = facefactor.Recognizer('rec-ex3.mat');

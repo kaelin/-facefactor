@@ -55,9 +55,7 @@ function labelSampleEyes(  )
 % --->8---
 
 cam = evalin('base', 'cam');
-faceDetector = evalin('base', 'faceDetector');
-faceMask = evalin('base', 'faceMask');
-eyesDetector = evalin('base', 'eyesDetector');
+ipp = evalin('base', 'ipp');
 
 try
     samples = evalin('base', 'samples');
@@ -77,39 +75,9 @@ end
 inputImage = facefactor.fetchInputImage(cam);
 
 %% Preprocess image
-% tic;
-bbox = faceDetector.step(inputImage);
-if ~isempty(bbox)
-    faceBox = bbox(1, :);
-    % Adjust for an apparent training error in the faceDetector.
-    faceBox(3:4) = faceBox(3:4) * 1.015;
-    faceImage = imcrop(inputImage, faceBox);
-    faceImage = imresize(faceImage, [200 NaN]);
-    faceImage = imcrop(faceImage, [20 0 159 200]);
-else
-    faceImage = faceMask;
-    return;
-end
-
-%% Infer image rotation
-inferImage = inputImage;
-[~, confidence, angle] = eyesDetector.step(faceImage);
-figure(1); clf; eyesDetector.plot();
-if angle ~= 0
-    inferImage = imrotate(inferImage, double(angle));
-    bbox = faceDetector.step(inferImage);
-    if ~isempty(bbox)
-        faceBox = bbox(1, :);
-        % Adjust for an apparent training error in the faceDetector.
-        faceBox(3:4) = faceBox(3:4) * 1.015;
-        faceImage = imcrop(inferImage, faceBox);
-        faceImage = imresize(faceImage, [200 NaN]);
-        faceImage = imcrop(faceImage, [20 0 159 200]);
-    end
-end
-faceImage = immultiply(im2single(faceImage), faceMask);
-faceImage = imadjust(faceImage, stretchlim(faceImage, [0.001 0.999]));
-sample = eyesDetector.Sample
+faceImage = ipp.step(inputImage);
+figure(1); clf; ipp.EyesDetector.plot();
+sample = ipp.EyesDetector.Sample
 
 %% Prompt for correct labels
 reply = input('Accept assigned labels in `sample` above? y/n [y]: ', 's');
