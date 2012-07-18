@@ -22,6 +22,7 @@ properties (SetAccess = immutable)
     Mask;
     Bnet;
     LogitBoost;
+    NaiveBayes;
 end
 
 properties (Access = private)
@@ -49,6 +50,7 @@ methods
         if strcmpi(classifier, 'LogitBoost')
             matf = matfile('+facefactor/eyes-classif-v1.mat');
             self.LogitBoost = matf.lb;
+            self.NaiveBayes = matf.nb;
         else
             matf = matfile('+facefactor/eye-bnet-v1.mat');
             self.Bnet = matf.bnet;
@@ -154,7 +156,8 @@ methods (Access = private)
             X(2, :) = cell2mat(self.Sample(3, :));
             X(3:4, :) = cell2mat(self.Sample(4, :));
             X(5, :) = cell2mat(self.Sample(5, :));
-            self.Score = single(self.LogitBoost.predict(X') == 1);
+            posteriors = self.NaiveBayes.posterior(X');
+            self.Score = single(self.LogitBoost.predict(X') == 1) .* posteriors(:, 1);
         else
             evidence = cell(1, 5);
             for i = 1:size(self.Sample, 2)
